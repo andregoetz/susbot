@@ -51,7 +51,7 @@ async def join(ctx: commands.Context):
         return ctx.voice_client
 
 
-@bot.command(name='leave', aliases=[], help='Leave a vc')
+@bot.command(name='leave', aliases=['l', 'disconnect', 'dc'], help='Leave a vc')
 async def leave(ctx: commands.Context):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
@@ -76,12 +76,14 @@ async def skip(ctx: commands.Context):
 
 
 @bot.command(name='play', aliases=['p'], help='Play a yt song')
-async def play(ctx: commands.Context, query):
+async def play(ctx: commands.Context, *query):
+    query = ' '.join(query)
     vc = await join(ctx)
     if vc is None:
         return
     song_path = f'/tmp/yt_{hash(query)}.mp3'
     subprocess.run(['yt-dlp', get_ytsearch(query), '-f', 'ba', '-o', song_path])
+    await ctx.send(f'Added {query} to the query')
     while vc.is_playing():
         await asyncio.sleep(1)
     vc.play(discord.FFmpegPCMAudio(song_path))
@@ -93,6 +95,14 @@ def get_ytsearch(query):
         return query
     else:
         return 'ytsearch:' + query
+
+
+@bot.command(name='test', aliases=[], help='Test')
+async def test(ctx: commands.Context, *query):
+    query = ' '.join(query)
+    if ctx.author.id == conf['andiru_id']:
+        print(query)
+        await ctx.message.delete()
 
 
 if __name__ == '__main__':
