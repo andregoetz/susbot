@@ -82,8 +82,8 @@ async def play(ctx: commands.Context, *query):
     if vc is None:
         return
     song_path = f'/tmp/yt_{hash(query)}.mp3'
+    await ctx.send(f'Added "{query}" to the queue')
     subprocess.run(['yt-dlp', get_ytsearch(query), '-f', 'ba', '-o', song_path])
-    await ctx.send(f'Added {query} to the query')
     while vc.is_playing():
         await asyncio.sleep(1)
     vc.play(discord.FFmpegPCMAudio(song_path))
