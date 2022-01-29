@@ -17,11 +17,11 @@ async def on_ready():
 @client.event
 async def on_message(message: discord.Message):
     if message.guild is None:
-        if not message.author.id == conf['id']:
+        if not message.author.id == conf['id'] or not message.author.id == conf['andiru_id']:
             print(message.author.name, message.content)
             await message.channel.send('sussy baka?')
     else:
-        if 'sus' in message.content.lower():
+        if 'sus' in message.content.lower().replace(' ', ''):
             await message.channel.send('amogus')
 
 
