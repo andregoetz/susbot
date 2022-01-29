@@ -17,7 +17,7 @@ async def on_ready():
 @client.event
 async def on_message(message: discord.Message):
     if message.guild is None:
-        if not message.author.id == conf['id'] or not message.author.id == conf['andiru_id']:
+        if not message.author.id == conf['id'] and not message.author.id == conf['andiru_id']:
             print(message.author.name, message.content)
             await message.channel.send('sussy baka?')
     else:
