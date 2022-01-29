@@ -1,6 +1,7 @@
 import re
 import os
 import json
+import datetime
 import asyncio
 import subprocess
 
@@ -115,8 +116,10 @@ async def remindme(ctx: commands.Context, time):
             time = 60
         else:
             time = int(time)
+    remind = datetime.datetime.now() + datetime.timedelta(seconds=time)
+    await ctx.reply(f'I will remind you on the {remind.strftime("%d.%m.%Y")} at {remind.strftime("%H:%M:%S")}')
     await asyncio.sleep(time)
-    await ctx.reply('Reminding you!')
+    await ctx.reply('Reminding you :D')
 
 
 @bot.command(name='test', aliases=['t'], help='Test')
