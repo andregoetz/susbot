@@ -1,3 +1,4 @@
+import re
 import os
 import json
 import asyncio
@@ -97,12 +98,37 @@ def get_ytsearch(query):
         return 'ytsearch:' + query
 
 
-@bot.command(name='test', aliases=[], help='Test')
-async def test(ctx: commands.Context, *query):
-    query = ' '.join(query)
+@bot.command(name='remindme', aliases=['rme'],
+             help='Remind me of something after given time, allowed times are: s, min, h, d')
+async def remindme(ctx: commands.Context, time):
+    if time.endswith('s'):
+        time = int(time[:-1])
+    elif time.endswith('min'):
+        time = int(time[:-3]) * 60
+    elif time.endswith('h'):
+        time = int(time[:-1]) * 3600
+    elif time.endswith('d'):
+        time = int(time[:-1]) * 86400
+    else:
+        time = ''.join(re.findall(r'\d+', time))
+        if time == '':
+            time = 60
+        else:
+            time = int(time)
+    await asyncio.sleep(time)
+    await ctx.reply('Reminding you!')
+
+
+@bot.command(name='test', aliases=['t'], help='Test')
+async def test(ctx: commands.Context):
     if ctx.author.id == conf['andiru_id']:
-        print(query)
         await ctx.message.delete()
+        guild: discord.Guild = ctx.guild
+        emojis = {}
+        for emoji in guild.emojis:
+            emojis[emoji.name] = emoji.id
+        with open('otaku_emojis.json', 'w') as out:
+            out.write(json.dumps(emojis, indent=2))
 
 
 if __name__ == '__main__':
