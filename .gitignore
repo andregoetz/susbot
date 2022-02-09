@@ -1,4 +1,5 @@
 res/config.json
+res/noten.json
 .idea/
 venv/
 __pycache__

@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 
 from hypixel_api import get_hypixel_player
+from fh_qis import check_for_changes
 
 path = os.path.dirname(os.path.abspath(__file__))
 with open(path + '/res/config.json') as conf:
@@ -19,13 +20,72 @@ intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix=conf['prefix'], intents=intents)
 
+task = None
 
+
+# General
 @bot.event
 async def on_ready():
     print(f'{bot.user} has connected to Discord as a Bot')
     await bot.change_presence(activity=discord.Game("Suscraft"))
 
 
+@bot.command(name='poll', aliases=[], help='Create a simple poll')
+async def simple_poll(ctx, question: str, *options):
+    await ctx.send(f'**{question}**')
+    for i, option in enumerate(options):
+        msg = await ctx.send(f'{str(i + 1)}. {option}')
+        await msg.add_reaction('👍')
+
+
+@bot.command(name='remindme', aliases=['rme'],
+             help='Remind me of something after given time, allowed times are: s, min, h, d')
+async def remindme(ctx: commands.Context, time):
+    if time.endswith('s'):
+        time = int(time[:-1])
+    elif time.endswith('min'):
+        time = int(time[:-3]) * 60
+    elif time.endswith('h'):
+        time = int(time[:-1]) * 3600
+    elif time.endswith('d'):
+        time = int(time[:-1]) * 86400
+    else:
+        time = ''.join(re.findall(r'\d+', time))
+        if time == '':
+            time = 60
+        else:
+            time = int(time)
+    remind = datetime.datetime.now() + datetime.timedelta(seconds=time)
+    await ctx.reply(f'I will remind you on the {remind.strftime("%d.%m.%Y")} at {remind.strftime("%H:%M:%S")}')
+    await asyncio.sleep(time)
+    await ctx.reply('Reminding you :D')
+
+
+# FH QIS
+@bot.command(name='check_grades', aliases=['cgrades', 'cg'], help='Only usable by Andiru')
+async def check_grades(ctx):
+    global task
+    if ctx.author.id == 539079017702359055:
+        if task is None:
+            task = bot.loop.create_task(run_check(ctx))
+            await ctx.send('Started check loop!')
+        else:
+            task.cancel()
+            task = None
+            await ctx.send('Stopped check loop!')
+
+
+async def run_check(ctx):
+    while True:
+        result = check_for_changes()
+        for key in result:
+            channel = ctx.guild.get_channel(conf['secret_axa_chat_id'])
+            await channel.send(f'Eine Klausur wurde korrigiert <@&{conf["axa_keks_id"]}>: ' + key)
+            await ctx.author.send(key + ': ' + result[key])
+        await asyncio.sleep(300)
+
+
+# Hypixel
 @bot.command(name='bwstats', aliases=['bws'], help='Get the Hypixel BedWars stats of a player')
 async def get_bwstats(ctx: commands.Context, player_name: str):
     hypixel_data = get_hypixel_player(player_name)
@@ -41,6 +101,7 @@ async def get_bwstats(ctx: commands.Context, player_name: str):
     await ctx.send(embed=embed)
 
 
+# Music player
 @bot.command(name='join', aliases=[], help='Join a vc')
 async def join(ctx: commands.Context):
     if ctx.author.voice is None or ctx.author.voice.channel is None:
@@ -99,39 +160,10 @@ def get_ytsearch(query):
         return 'ytsearch:' + query
 
 
-@bot.command(name='remindme', aliases=['rme'],
-             help='Remind me of something after given time, allowed times are: s, min, h, d')
-async def remindme(ctx: commands.Context, time):
-    if time.endswith('s'):
-        time = int(time[:-1])
-    elif time.endswith('min'):
-        time = int(time[:-3]) * 60
-    elif time.endswith('h'):
-        time = int(time[:-1]) * 3600
-    elif time.endswith('d'):
-        time = int(time[:-1]) * 86400
-    else:
-        time = ''.join(re.findall(r'\d+', time))
-        if time == '':
-            time = 60
-        else:
-            time = int(time)
-    remind = datetime.datetime.now() + datetime.timedelta(seconds=time)
-    await ctx.reply(f'I will remind you on the {remind.strftime("%d.%m.%Y")} at {remind.strftime("%H:%M:%S")}')
-    await asyncio.sleep(time)
-    await ctx.reply('Reminding you :D')
-
-
 @bot.command(name='test', aliases=['t'], help='Test')
 async def test(ctx: commands.Context):
     if ctx.author.id == conf['andiru_id']:
         await ctx.message.delete()
-        guild: discord.Guild = ctx.guild
-        emojis = {}
-        for emoji in guild.emojis:
-            emojis[emoji.name] = emoji.id
-        with open('otaku_emojis.json', 'w') as out:
-            out.write(json.dumps(emojis, indent=2))
 
 
 if __name__ == '__main__':
